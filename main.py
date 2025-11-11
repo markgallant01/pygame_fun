@@ -1,64 +1,40 @@
 import pygame
+import os
+import random
 
-class Player:
-    def __init__(self, position: tuple[int,int]):
-        self.__xPos, self.__yPos = position
-        self.__speed = 10
+# window constants
+(SCREEN_WIDTH, SCREEN_HEIGHT) = 1280, 720
+SCREEN_CENTER: tuple = SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2
 
-    @property
-    def xPos(self):
-        return self.__xPos
-
-    @property
-    def yPos(self):
-        return self.__yPos
-
-    def move_up(self):
-        self.__yPos -= self.__speed
-
-    def move_down(self):
-        self.__yPos += self.__speed
-
-    def move_left(self):
-        self.__xPos -= self.__speed
-
-    def move_right(self):
-        self.__xPos += self.__speed
-
-class Block:
-    def __init__(self, position: tuple[int,int], color: str = "brown"):
-        self.__width = 60
-        self.__xPos = position[0] - self.__width // 2
-        self.__yPos = position[1] - self.__width // 2
-        self.__color = color
-        self.__rect = pygame.Rect(self.__xPos, self.__yPos,
-                                  self.__width, self.__width)
-
-    @property
-    def xPos(self):
-        return self.__xPos
-
-    @property
-    def yPos(self):
-        return self.__yPos
-
-    @property
-    def rect(self):
-        return self.__rect
-
-SCREEN_WIDTH: int = 1280
-SCREEN_HEIGHT: int = 720
-SCREEN_CENTER: tuple[int,int] = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
-
+# setup
 pygame.init()
-screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-clock = pygame.time.Clock()
+display_surface = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+pygame.display.set_caption("Space Shooter")
 running = True
-dt = 0
 
-player = Player(SCREEN_CENTER)
-block = Block(SCREEN_CENTER)
+# load images
+player_surface = pygame.image.load(
+    os.path.join('images', 'player.png')).convert_alpha()
+player_rect = player_surface.get_frect(center = SCREEN_CENTER)
 
+star_surface = pygame.image.load(
+    os.path.join('images', 'star.png')).convert_alpha()
+
+meteor_surface = pygame.image.load(
+    os.path.join('images', 'meteor.png')).convert_alpha()
+meteor_rect = meteor_surface.get_frect(center = SCREEN_CENTER)
+
+laser_surface = pygame.image.load(
+    os.path.join('images', 'laser.png')).convert_alpha()
+laser_rect = laser_surface.get_frect(bottomleft = (0,SCREEN_HEIGHT))
+
+# create list of star coords
+star_coords: list[tuple] = []
+for i in range(0, 20):
+    (x,y) = random.randint(0, 1280), random.randint(0, 720)
+    star_coords.append((x,y))
+
+bounce = False
 while running:
     # poll for events
     for event in pygame.event.get():
@@ -66,29 +42,25 @@ while running:
             running = False
 
     # fill screen with color to wipe last frame
-    screen.fill("blue")
+    display_surface.fill("darkgrey")
 
-    # render
-    pygame.draw.circle(screen, "red", (player.xPos, player.yPos) , 40)
-    start = (SCREEN_CENTER[0] - 180, SCREEN_CENTER[1])
-    for i in range(0, 7):
-        new_block = Block(start)
-        pygame.draw.rect(screen, "brown", new_block.rect)
-        start = (start[0] + 60, start[1])
+    # display stars
+    for star_coord in star_coords:
+        display_surface.blit(star_surface, star_coord)
 
-    keys = pygame.key.get_pressed()
-    if keys[pygame.K_e]:
-        player.move_up()
-    if keys[pygame.K_d]:
-        player.move_down()
-    if keys[pygame.K_s]:
-        player.move_left()
-    if keys[pygame.K_f]:
-        player.move_right()
+    if not bounce:
+        player_rect.right += 0.1
+        if player_rect.right >= SCREEN_WIDTH:
+            bounce = True
+    else:
+        player_rect.left -= 0.1
+        if player_rect.left <= 0:
+            bounce = False
 
-    # flip display to screen
-    pygame.display.flip()
-    clock.tick(60)
+    display_surface.blit(meteor_surface, meteor_rect)
+    display_surface.blit(player_surface, player_rect)
+    display_surface.blit(laser_surface, laser_rect)
+    pygame.display.update()
 
 pygame.quit()
 

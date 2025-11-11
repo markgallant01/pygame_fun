@@ -11,11 +11,26 @@ pygame.init()
 display_surface = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Space Shooter")
 running = True
+clock = pygame.time.Clock()
 
-# load images
-player_surface = pygame.image.load(
-    os.path.join('images', 'player.png')).convert_alpha()
-player_rect = player_surface.get_frect(center = SCREEN_CENTER)
+class Player(pygame.sprite.Sprite):
+    def __init__(self, group):
+        super().__init__(group)
+        self.image = pygame.image.load(
+            os.path.join('images', 'player.png')).convert_alpha()
+        self.rect = self.image.get_frect(center = SCREEN_CENTER)
+        self.direction = pygame.math.Vector2()
+        self.speed = 300
+
+    def move(self):
+        keys = pygame.key.get_pressed()
+        self.direction.x = int(keys[pygame.K_f]) - int(keys[pygame.K_s])
+        self.direction.y = int(keys[pygame.K_d]) - int(keys[pygame.K_e])
+        self.direction = self.direction.normalize() if self.direction else self.direction
+        self.rect.center += self.direction * self.speed * dt
+
+all_sprites = pygame.sprite.Group()
+player = Player(all_sprites)
 
 star_surface = pygame.image.load(
     os.path.join('images', 'star.png')).convert_alpha()
@@ -36,6 +51,8 @@ for i in range(0, 20):
 
 bounce = False
 while running:
+    dt = clock.tick() / 1000
+
     # poll for events
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -48,18 +65,11 @@ while running:
     for star_coord in star_coords:
         display_surface.blit(star_surface, star_coord)
 
-    if not bounce:
-        player_rect.right += 0.1
-        if player_rect.right >= SCREEN_WIDTH:
-            bounce = True
-    else:
-        player_rect.left -= 0.1
-        if player_rect.left <= 0:
-            bounce = False
+    player.move()
 
     display_surface.blit(meteor_surface, meteor_rect)
-    display_surface.blit(player_surface, player_rect)
     display_surface.blit(laser_surface, laser_rect)
+    all_sprites.draw(display_surface)
     pygame.display.update()
 
 pygame.quit()

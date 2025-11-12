@@ -18,7 +18,7 @@ class Player(pygame.sprite.Sprite):
         super().__init__(group)
         self.image = pygame.image.load(
             os.path.join('images', 'player.png')).convert_alpha()
-        self.rect = self.image.get_frect(center = SCREEN_CENTER)
+        self.rect: pygame.FRect = self.image.get_frect(center = SCREEN_CENTER)
         self.direction = pygame.math.Vector2()
         self.speed = 300
 
@@ -26,7 +26,8 @@ class Player(pygame.sprite.Sprite):
         keys = pygame.key.get_pressed()
         self.direction.x = int(keys[pygame.K_f]) - int(keys[pygame.K_s])
         self.direction.y = int(keys[pygame.K_d]) - int(keys[pygame.K_e])
-        self.direction = self.direction.normalize() if self.direction else self.direction
+        self.direction = (self.direction.normalize()
+                          if self.direction else self.direction)
         self.rect.center += self.direction * self.speed * dt
 
 all_sprites = pygame.sprite.Group()

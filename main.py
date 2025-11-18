@@ -22,6 +22,9 @@ class Player(pg.sprite.Sprite):
 
         self.laser_surface = laser_surface
 
+        # mask
+        self.mask = pg.mask.from_surface(self.image)
+
     def laser_timer(self):
         if not self.can_shoot:
             current_time = pg.time.get_ticks()
@@ -67,6 +70,9 @@ class Laser(pg.sprite.Sprite):
 
         self.speed = 400
 
+        # mask
+        self.mask = pg.mask.from_surface(self.image)
+
     def update(self, dt: int):
         self.rect.centery -= self.speed * dt
         if self.rect.bottom < 0:
@@ -77,6 +83,7 @@ class Meteor(pg.sprite.Sprite):
     def __init__(self, surface: pg.surface.Surface,
                  groups: list[pg.sprite.Group[pg.sprite.Sprite]]):
         super().__init__(groups)
+        self.original_surface = surface
         self.image = surface
 
         (x,y) = random.randint(0, SCREEN_WIDTH), 0
@@ -86,18 +93,28 @@ class Meteor(pg.sprite.Sprite):
         self.creation_time = pg.time.get_ticks()
         self.lifetime = 3000
         self.direction = pg.Vector2(random.uniform(-0.5, 0.5), 1)
+        self.rotation = 0
+        self.rotation_speed = random.randint(1, 500)
+
+        # mask
+        self.mask = pg.mask.from_surface(self.image)
 
     def update(self, dt: int):
         self.rect.center += self.direction * self.speed * dt
         current_time = pg.time.get_ticks()
         if current_time - self.creation_time >= self.lifetime:
             self.kill()
+        self.rotation += self.rotation_speed * dt
+        self.image = pg.transform.rotozoom(self.original_surface,
+                                           self.rotation, 1)
+        self.rect = self.image.get_frect(center = self.rect.center)
 
 
 def collisions():
     global running
 
-    player_collisions = pg.sprite.spritecollide(player, meteor_sprites, True)
+    player_collisions = pg.sprite.spritecollide(player, meteor_sprites, True,
+                                                pg.sprite.collide_mask)
     if player_collisions:
         running = False
 
